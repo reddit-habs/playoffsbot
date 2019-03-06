@@ -1,0 +1,10 @@
+[package]
+name = "playoffsbot"
+version = "0.1.0"
+authors = ["Simon Bernier St-Pierre <sbernierstpierre@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+chrono = { version = "0.4", features = ["serde"] }
+reqwest = "0.9"
+serde = { version = "1", features = ["derive"] }
