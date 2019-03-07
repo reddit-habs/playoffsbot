@@ -48,19 +48,19 @@ impl Serialize for Season {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct LeagueRecord {
-    wins: u32,
-    losses: u32,
-    ot: u32,
+    pub wins: u32,
+    pub losses: u32,
+    pub ot: u32,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Team {
-    id: u32,
-    name: String,
+    pub id: u32,
+    pub name: String,
 }
 
 pub mod schedule {
-    use chrono::{DateTime, NaiveDate, Utc};
+    use chrono::{DateTime, Local, NaiveDate, Utc};
     use serde::{Deserialize, Serialize};
 
     use super::{LeagueRecord, Season, Team};
@@ -88,6 +88,15 @@ pub mod schedule {
         pub teams: Teams,
     }
 
+    impl Game {
+        pub fn home_team(&self) -> &Team {
+            &self.teams.home.team
+        }
+        pub fn away_team(&self) -> &Team {
+            &self.teams.away.team
+        }
+    }
+
     #[derive(Debug, Clone, Deserialize, Serialize)]
     pub struct Teams {
         pub away: TeamRecord,
@@ -99,15 +108,45 @@ pub mod schedule {
         pub team: Team,
         #[serde(rename = "leagueRecord")]
         pub league_record: LeagueRecord,
+        pub score: u32,
     }
 
-    pub fn today() -> reqwest::Result<Vec<Date>> {
-        let root: Root = reqwest::get("https://statsapi.web.nhl.com/api/v1/schedule")?.json()?;
+    pub fn get(date: &NaiveDate) -> reqwest::Result<Date> {
+        let date = format!("{}", date.format("%Y-%m-%d"));
+
+        let client = reqwest::Client::new();
+        let mut root: Root = client
+            .get("https://statsapi.web.nhl.com/api/v1/schedule")
+            .query(&[("date", date)])
+            .send()?
+            .json()?;
+        Ok(root.dates.remove(0))
+    }
+
+    pub fn get_range(begin: &NaiveDate, end: &NaiveDate) -> reqwest::Result<Vec<Date>> {
+        let begin = format!("{}", begin.format("%Y-%m-%d"));
+        let end = format!("{}", end.format("%Y-%m-%d"));
+
+        let client = reqwest::Client::new();
+        let root: Root = client
+            .get("https://statsapi.web.nhl.com/api/v1/schedule")
+            .query(&[("startDate", begin), ("endDate", end)])
+            .send()?
+            .json()?;
         Ok(root.dates)
+    }
+
+    pub fn today() -> reqwest::Result<Date> {
+        get(&Local::today().naive_local())
+    }
+
+    pub fn yesterday() -> reqwest::Result<Date> {
+        get(&Local::today().naive_local().pred())
     }
 }
 
 pub mod standings {
+    use chrono::{Local, NaiveDate};
     use serde::{Deserialize, Serialize};
 
     use super::{from_str, LeagueRecord, Team};
@@ -125,32 +164,92 @@ pub mod standings {
 
     #[derive(Debug, Clone, Deserialize, Serialize)]
     pub struct TeamRecord {
-        team: Team,
+        pub team: Team,
         #[serde(rename = "leagueRecord")]
-        league_record: LeagueRecord,
+        pub league_record: LeagueRecord,
 
         #[serde(rename = "goalsAgainst")]
-        goals_against: u32,
+        pub goals_against: u32,
         #[serde(rename = "goalsScored")]
-        goals_scored: u32,
-        points: u32,
-        row: u32,
+        pub goals_scored: u32,
+        pub points: u32,
+        pub row: u32,
         #[serde(rename = "gamesPlayed")]
-        games_played: u32,
+        pub games_played: u32,
 
         #[serde(rename = "divisionRank", deserialize_with = "from_str")]
-        division_rank: u32,
+        pub division_rank: u32,
         #[serde(rename = "conferenceRank", deserialize_with = "from_str")]
-        conference_rank: u32,
+        pub conference_rank: u32,
         #[serde(rename = "leagueRank", deserialize_with = "from_str")]
-        league_rank: u32,
+        pub league_rank: u32,
         #[serde(rename = "wildCardRank", deserialize_with = "from_str")]
-        wildcard_rank: u32,
+        pub wildcard_rank: u32,
+    }
+
+    pub fn get(date: &NaiveDate) -> reqwest::Result<Vec<TeamRecord>> {
+        let date = format!("{}", date.format("%Y-%m-%d"));
+        let client = reqwest::Client::new();
+        let mut root: Root = client
+            .get("https://statsapi.web.nhl.com/api/v1/standings/byLeague")
+            .query(&[("date", date)])
+            .send()?
+            .json()?;
+        Ok(root.records.remove(0).team_records)
     }
 
     pub fn today() -> reqwest::Result<Vec<TeamRecord>> {
-        let mut root: Root =
-            reqwest::get("https://statsapi.web.nhl.com/api/v1/standings/byLeague")?.json()?;
-        Ok(root.records.remove(0).team_records)
+        get(&Local::today().naive_local())
+    }
+
+    pub fn yesterday() -> reqwest::Result<Vec<TeamRecord>> {
+        get(&Local::today().naive_local().pred())
+    }
+}
+
+pub mod teams {
+    use std::cmp;
+
+    use serde::{Deserialize, Serialize};
+
+    #[derive(Debug, Clone, Deserialize, Serialize)]
+    struct Root {
+        teams: Vec<Team>,
+    }
+
+    #[derive(Debug, Clone, Deserialize, Serialize)]
+    pub struct Team {
+        pub id: u32,
+        #[serde(rename = "name")]
+        pub full_name: String,
+        #[serde(rename = "abbreviation")]
+        pub abbrev: String,
+        #[serde(rename = "teamName")]
+        pub name: String,
+        #[serde(rename = "locationName")]
+        pub location: String,
+        pub division: Division,
+        pub conference: Conference,
+    }
+
+    #[derive(Debug, Clone, Deserialize, Serialize)]
+    pub struct Division {
+        pub id: u32,
+        pub name: String,
+    }
+
+    #[derive(Debug, Clone, Deserialize, Serialize)]
+    pub struct Conference {
+        pub id: u32,
+        pub name: String,
+    }
+
+    pub fn get() -> reqwest::Result<Vec<Team>> {
+        let client = reqwest::Client::new();
+        let root: Root = client
+            .get("https://statsapi.web.nhl.com/api/v1/teams")
+            .send()?
+            .json()?;
+        Ok(root.teams)
     }
 }

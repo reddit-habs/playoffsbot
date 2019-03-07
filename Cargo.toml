@@ -8,3 +8,4 @@ edition = "2018"
 chrono = { version = "0.4", features = ["serde"] }
 reqwest = "0.9"
 serde = { version = "1", features = ["derive"] }
+rand = "0.6"
