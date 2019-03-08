@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 //! Docs: https://gitlab.com/dword4/nhlapi
 
 use std::fmt::Display;
@@ -116,7 +117,7 @@ pub mod schedule {
 
         let client = reqwest::Client::new();
         let mut root: Root = client
-            .get("https://statsapi.web.nhl.com/api/v1/schedule")
+            .get("https://statsapi.web.nhl.com/api/v1/schedule?expand=schedule.linescore")
             .query(&[("date", date)])
             .send()?
             .json()?;
@@ -208,8 +209,6 @@ pub mod standings {
 }
 
 pub mod teams {
-    use std::cmp;
-
     use serde::{Deserialize, Serialize};
 
     #[derive(Debug, Clone, Deserialize, Serialize)]

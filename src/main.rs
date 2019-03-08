@@ -24,6 +24,13 @@ impl Api {
             .expect("team abbrev not found")
     }
 
+    pub fn get_team_by_id(&self, team_id: u32) -> &Team {
+        self.teams
+            .iter()
+            .find(|t| t.id == team_id)
+            .expect("team id not found")
+    }
+
     pub fn get_points(&self, team_id: u32, past: bool) -> u32 {
         if !past {
             self.standings
@@ -163,8 +170,18 @@ impl<'m> MatchupPre<'m> {
         {
             home_team
         } else {
-            // TODO: simulation
-            home_team
+            const TIMES: u32 = 50_000;
+            if self.is_result {
+                simulation::pick_ideal_winner(
+                    a.api,
+                    a.my_team,
+                    &a.api.past_standings,
+                    self.game,
+                    TIMES,
+                )
+            } else {
+                simulation::pick_ideal_winner(a.api, a.my_team, &a.api.standings, self.game, TIMES)
+            }
         };
 
         Matchup {
@@ -177,11 +194,11 @@ impl<'m> MatchupPre<'m> {
 }
 
 fn main() -> reqwest::Result<()> {
-    let teams = nhlapi::teams::get()?;
-    let past_standings = nhlapi::standings::yesterday()?;
-    let standings = nhlapi::standings::today()?;
-    let results = nhlapi::schedule::yesterday()?;
-    let games = nhlapi::schedule::today()?;
+    let teams = nhlapi::teams::get().expect("error getting teams");
+    let past_standings = nhlapi::standings::yesterday().expect("error getting past standings");
+    let standings = nhlapi::standings::today().expect("error getting standings");
+    let results = nhlapi::schedule::yesterday().expect("error getting results");
+    let games = nhlapi::schedule::today().expect("error getting games");
 
     let api = Api {
         teams,
