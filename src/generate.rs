@@ -17,7 +17,7 @@ impl MarkdownGenerator<'_> {
 
     fn fmt_team(&self, team: &nhlapi::Team) -> String {
         let team = self.api.get_team_by_id(team.id);
-        format!("{}", team.abbrev)
+        format!("[](/r/{}){}", team.subreddit, team.abbrev)
     }
 
     fn fmt_vs(&self, home_team: &nhlapi::Team, away_team: &nhlapi::Team) -> String {

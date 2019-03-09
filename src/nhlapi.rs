@@ -50,6 +50,7 @@ impl Serialize for Season {
 pub struct LeagueRecord {
     pub wins: u32,
     pub losses: u32,
+    #[serde(default)]
     pub ot: u32,
 }
 
@@ -294,6 +295,39 @@ pub mod standings {
 }
 
 pub mod teams {
+    const SUBREDDITS: &'static str = "\
+        anaheimducks
+        coyotes
+        bostonbruins
+        sabres
+        calgaryflames
+        canes
+        hawks
+        coloradoavalanche
+        bluejackets
+        dallasstars
+        detroitredwings
+        edmontonoilers
+        floridapanthers
+        losangeleskings
+        wildhockey
+        habs
+        predators
+        devils
+        newyorkislanders
+        rangers
+        ottawasenators
+        flyers
+        penguins
+        sanjosesharks
+        stlouisblues
+        tampabaylightning
+        leafs
+        canucks
+        goldenknights
+        caps
+        winnipegjets";
+
     use serde::{Deserialize, Serialize};
 
     #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -314,6 +348,8 @@ pub mod teams {
         pub location: String,
         pub division: Division,
         pub conference: Conference,
+        #[serde(default)]
+        pub subreddit: String,
     }
 
     #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -330,10 +366,17 @@ pub mod teams {
 
     pub fn get() -> reqwest::Result<Vec<Team>> {
         let client = reqwest::Client::new();
-        let root: Root = client
+        let mut root: Root = client
             .get("https://statsapi.web.nhl.com/api/v1/teams")
             .send()?
             .json()?;
+
+        root.teams.sort_unstable_by_key(|t| t.full_name.clone());
+
+        for (sub, team) in SUBREDDITS.lines().zip(root.teams.iter_mut()) {
+            team.subreddit = sub.trim().to_string();
+        }
+
         Ok(root.teams)
     }
 }
