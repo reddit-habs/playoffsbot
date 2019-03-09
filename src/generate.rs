@@ -107,12 +107,10 @@ impl MarkdownGenerator<'_> {
         let mut doc = Document::new();
         doc.add(H1::new("Playoffs race!"));
 
-        let yesterday_odds = simulation::odds_for_team(self.api, self.an.my_team, true);
         let today_odds = simulation::odds_for_team(self.api, self.an.my_team, false);
 
         doc.add(Paragraph::new(format!(
-            "Playoffs odds yesterday: {:.1}%, playoffs odds today: {:.1}%",
-            yesterday_odds * 100.0,
+            "Playoffs odds today: {:.1}%",
             today_odds * 100.0
         )));
 
