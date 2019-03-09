@@ -9,7 +9,7 @@ use crate::nhlapi::standings::TeamRecord;
 use crate::nhlapi::teams::Team;
 use crate::Api;
 
-pub const TIMES: u32 = 100_000;
+pub const TIMES: u32 = 50_000;
 
 #[derive(Debug, Copy, Clone)]
 struct Entry {

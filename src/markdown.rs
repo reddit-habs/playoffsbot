@@ -42,7 +42,7 @@ impl Paragraph {
 
 impl Display for Paragraph {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}\n", self.0)
+        write!(f, "{}\n\n", self.0)
     }
 }
 
