@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 //! Docs: https://gitlab.com/dword4/nhlapi
 
 use std::fmt::Display;
@@ -87,14 +86,43 @@ pub mod schedule {
         #[serde(rename = "gameDate")]
         pub game_date: DateTime<Utc>,
         pub teams: Teams,
+        pub linescore: LineScore,
     }
 
     impl Game {
         pub fn home_team(&self) -> &Team {
             &self.teams.home.team
         }
+
         pub fn away_team(&self) -> &Team {
             &self.teams.away.team
+        }
+
+        pub fn winner(&self) -> &Team {
+            if self.teams.home.score > self.teams.away.score {
+                self.home_team()
+            } else {
+                self.away_team()
+            }
+        }
+
+        pub fn loser(&self) -> &Team {
+            if self.teams.home.score > self.teams.away.score {
+                self.away_team()
+            } else {
+                self.home_team()
+            }
+        }
+
+        pub fn local_time(&self) -> String {
+            self.game_date
+                .with_timezone(&Local)
+                .format("%H:%M")
+                .to_string()
+        }
+
+        pub fn overtime(&self) -> bool {
+            self.linescore.periods.len() > 3
         }
     }
 
@@ -110,6 +138,17 @@ pub mod schedule {
         #[serde(rename = "leagueRecord")]
         pub league_record: LeagueRecord,
         pub score: u32,
+    }
+
+    #[derive(Debug, Clone, Deserialize, Serialize)]
+    pub struct LineScore {
+        pub periods: Vec<Period>,
+    }
+
+    #[derive(Debug, Clone, Deserialize, Serialize)]
+    pub struct Period {
+        #[serde(rename = "periodType")]
+        pub period_type: String,
     }
 
     pub fn get(date: &NaiveDate) -> reqwest::Result<Date> {
@@ -130,7 +169,7 @@ pub mod schedule {
 
         let client = reqwest::Client::new();
         let root: Root = client
-            .get("https://statsapi.web.nhl.com/api/v1/schedule")
+            .get("https://statsapi.web.nhl.com/api/v1/schedule?expand=schedule.linescore")
             .query(&[("startDate", begin), ("endDate", end)])
             .send()?
             .json()?;
@@ -154,11 +193,11 @@ pub mod standings {
 
     #[derive(Debug, Clone, Deserialize, Serialize)]
     struct Root {
-        pub records: Vec<Records>,
+        pub records: Vec<RootRecords>,
     }
 
     #[derive(Debug, Clone, Deserialize, Serialize)]
-    struct Records {
+    struct RootRecords {
         #[serde(rename = "teamRecords")]
         pub team_records: Vec<TeamRecord>,
     }
@@ -186,13 +225,59 @@ pub mod standings {
         pub league_rank: u32,
         #[serde(rename = "wildCardRank", deserialize_with = "from_str")]
         pub wildcard_rank: u32,
+
+        pub records: Records,
+    }
+
+    impl TeamRecord {
+        pub fn format(&self) -> String {
+            format!(
+                "{}-{}-{}",
+                self.league_record.wins, self.league_record.losses, self.league_record.ot
+            )
+        }
+
+        pub fn last10(&self) -> Option<String> {
+            self.records
+                .overall_records
+                .iter()
+                .find(|x| x.kind == "lastTen")
+                .map(|x| format!("{}-{}-{}", x.wins, x.losses, x.ot))
+        }
+
+        pub fn point_percent(&self) -> String {
+            format!("{:.3}", self.points as f64 / (self.games_played * 2) as f64)
+        }
+
+        pub fn point_82(&self) -> String {
+            format!(
+                "{:.0}",
+                (self.points as f64 / self.games_played as f64) * 82.0
+            )
+        }
+    }
+
+    #[derive(Debug, Clone, Deserialize, Serialize)]
+    pub struct Records {
+        #[serde(rename = "overallRecords")]
+        overall_records: Vec<Record>,
+    }
+
+    #[derive(Debug, Clone, Deserialize, Serialize)]
+    pub struct Record {
+        wins: u32,
+        losses: u32,
+        #[serde(default)]
+        ot: u32,
+        #[serde(rename = "type")]
+        kind: String,
     }
 
     pub fn get(date: &NaiveDate) -> reqwest::Result<Vec<TeamRecord>> {
         let date = format!("{}", date.format("%Y-%m-%d"));
         let client = reqwest::Client::new();
         let mut root: Root = client
-            .get("https://statsapi.web.nhl.com/api/v1/standings/byLeague")
+            .get("https://statsapi.web.nhl.com/api/v1/standings/byLeague?expand=standings.record")
             .query(&[("date", date)])
             .send()?
             .json()?;

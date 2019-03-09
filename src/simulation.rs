@@ -9,11 +9,12 @@ use crate::nhlapi::standings::TeamRecord;
 use crate::nhlapi::teams::Team;
 use crate::Api;
 
+pub const TIMES: u32 = 100_000;
+
 #[derive(Debug, Copy, Clone)]
 struct Entry {
     team_id: u32,
     division_id: u32,
-    conference_id: u32,
     wins: u32,
     losses: u32,
     ot: u32,
@@ -49,49 +50,40 @@ fn random_event(base: &Entry) -> Event {
     .0
 }
 
-pub fn pick_ideal_winner<'a>(
+pub fn odds_for_team<'a>(api: &'a Api, team: &'a Team, past: bool) -> f64 {
+    let sim = if !past {
+        Simulation::new(api, team, &api.standings)
+    } else {
+        Simulation::new(api, team, &api.past_standings)
+    };
+    let x = sim.run_for(TIMES);
+    x as f64 / TIMES as f64
+}
+
+pub fn pick_ideal_loser<'a>(
     api: &'a Api,
     my_team: &'a Team,
     records: &'a [TeamRecord],
     game: &'a Game,
-    times: u32,
 ) -> &'a nhlapi::Team {
     let mut home_win_sim = Simulation::new(api, my_team, records);
     home_win_sim.give_team_win(game.home_team().id);
     home_win_sim.give_team_loss(game.away_team().id);
-    let mut home_win_x = 0;
-    for _ in 0..times {
-        if home_win_sim.run() {
-            home_win_x += 1;
-        }
-    }
+    let home_win_x = home_win_sim.run_for(TIMES);
 
     let mut away_win_sim = Simulation::new(api, my_team, records);
     away_win_sim.give_team_win(game.away_team().id);
     away_win_sim.give_team_loss(game.home_team().id);
-    let mut away_win_x = 0;
-    for _ in 0..times {
-        if away_win_sim.run() {
-            away_win_x += 1;
-        }
-    }
-
-    eprintln!(
-        "{} ({}) at {} ({})",
-        game.away_team().name,
-        away_win_x,
-        game.home_team().name,
-        home_win_x
-    );
+    let away_win_x = away_win_sim.run_for(TIMES);
 
     if home_win_x > away_win_x {
-        game.home_team()
-    } else {
         game.away_team()
+    } else {
+        game.home_team()
     }
 }
 
-struct Simulation<'a> {
+pub struct Simulation<'a> {
     my_team: &'a Team,
     base: Vec<Entry>,
 }
@@ -105,7 +97,6 @@ impl Simulation<'_> {
                 base.push(Entry {
                     team_id: team.id,
                     division_id: team.division.id,
-                    conference_id: team.conference.id,
                     wins: record.league_record.wins,
                     losses: record.league_record.losses,
                     ot: record.league_record.ot,
@@ -132,7 +123,19 @@ impl Simulation<'_> {
         }
     }
 
-    pub fn run(&self) -> bool {
+    /// Run the simulation for `times` times, and return the number of times
+    /// `self.my_team` made the playoffs.
+    pub fn run_for(&self, times: u32) -> u32 {
+        let mut x = 0;
+        for _ in 0..times {
+            if self.run() {
+                x += 1
+            }
+        }
+        x
+    }
+
+    fn run(&self) -> bool {
         let mut entries = self.base.clone();
         for (base, entry) in self.base.iter().zip(entries.iter_mut()) {
             while entry.games_played < 82 {
@@ -146,6 +149,7 @@ impl Simulation<'_> {
                 }
             }
         }
+
         entries.sort_unstable_by_key(|e| Reverse((e.points, e.wins)));
 
         let top_3_teams: BTreeSet<u32> = entries
