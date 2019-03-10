@@ -56,7 +56,7 @@ fn main() -> Result<(), Error> {
         } else {
             let today = Local::today();
             reddit.submit_self(
-                "frostbiten",
+                &team.subreddit,
                 &format!(
                     "Playoffs Race: {} {}, {}",
                     today.format("%B"),
