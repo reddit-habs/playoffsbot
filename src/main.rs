@@ -43,16 +43,6 @@ fn main() -> Result<(), Error> {
         &config.password,
     )?;
 
-    // let teams = ["mtl", "car", "cbj"];
-    // for abbrev in &teams {
-    //     let team = api.get_team_by_abbrev(abbrev);
-    //     println!(
-    //         "{} {:.3}",
-    //         team.abbrev,
-    //         simulation::odds_for_team(&api, team, 50_000)
-    //     );
-    // }
-
     for abbrev in config.playoffs {
         let team = api.get_team_by_abbrev(&abbrev);
         let analyzer = Analyzer::new(&api, team);

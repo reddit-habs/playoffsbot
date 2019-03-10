@@ -371,7 +371,8 @@ pub mod teams {
             .send()?
             .json()?;
 
-        root.teams.sort_unstable_by_key(|t| t.full_name.clone());
+        root.teams
+            .sort_unstable_by(|left, right| left.full_name.cmp(&right.full_name));
 
         for (sub, team) in SUBREDDITS.lines().zip(root.teams.iter_mut()) {
             team.subreddit = sub.trim().to_string();
