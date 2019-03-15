@@ -2,17 +2,22 @@ use std::iter;
 
 use crate::analysis::{Analysis, Api, Matchup, PlayoffMatchup, Seed};
 use crate::markdown::*;
-use crate::nhlapi::{self, standings::TeamRecord};
+use crate::nhlapi::{self, schedule::Date, standings::TeamRecord};
 use crate::simulation;
 
 pub struct MarkdownGenerator<'a> {
     api: &'a Api,
     an: &'a Analysis<'a>,
+    schedule: &'a [Date],
 }
 
 impl MarkdownGenerator<'_> {
-    pub fn new<'a>(api: &'a Api, an: &'a Analysis<'a>) -> MarkdownGenerator<'a> {
-        MarkdownGenerator { api, an }
+    pub fn new<'a>(
+        api: &'a Api,
+        an: &'a Analysis<'a>,
+        schedule: &'a [Date],
+    ) -> MarkdownGenerator<'a> {
+        MarkdownGenerator { api, an, schedule }
     }
 
     fn fmt_team(&self, team: &nhlapi::Team) -> String {
@@ -103,6 +108,20 @@ impl MarkdownGenerator<'_> {
         table
     }
 
+    fn make_schedule_table(&self) -> Table {
+        let mut table = Table::new(&["Away", "", "Home", "Date", "Time"]);
+        for game in self.schedule.iter().map(|x| &x.games).flatten().take(10) {
+            table.add(&[
+                self.fmt_team(game.away_team()),
+                format!("at"),
+                self.fmt_team(game.home_team()),
+                game.local_date(),
+                game.local_time(),
+            ]);
+        }
+        table
+    }
+
     pub fn markdown(&self) -> Document {
         let mut doc = Document::new();
         doc.add(H1::new("Playoffs race!"));
@@ -157,6 +176,12 @@ impl MarkdownGenerator<'_> {
 
         doc.add(List::from(&["Outside of town"]));
         doc.add(self.make_game_table(self.an.games.iter()));
+
+        //
+        // Schedule
+        //
+        doc.add(H2::new("Upcoming schedule"));
+        doc.add(self.make_schedule_table());
 
         doc
     }

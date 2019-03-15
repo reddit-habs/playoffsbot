@@ -9,7 +9,7 @@ mod simulation;
 use std::fs::File;
 use std::io::prelude::*;
 
-use chrono::{Datelike, Local};
+use chrono::{Datelike, Local, NaiveDate, TimeZone};
 use failure::Error;
 use ordinal::Ordinal;
 use serde::{Deserialize, Serialize};
@@ -27,6 +27,14 @@ pub struct Config {
     playoffs: Vec<String>,
     #[serde(default)]
     test: bool,
+}
+
+fn get_season_year(today: &NaiveDate) -> i32 {
+    if today.month() < 7 {
+        today.year()
+    } else {
+        today.year() + 1
+    }
 }
 
 fn main() -> Result<(), Error> {
@@ -47,7 +55,13 @@ fn main() -> Result<(), Error> {
         let team = api.get_team_by_abbrev(&abbrev);
         let analyzer = Analyzer::new(&api, team);
         let an = analyzer.perform();
-        let gen = MarkdownGenerator::new(&api, &an);
+
+        let today = Local::today().naive_local();
+        let season_end = Local.ymd(get_season_year(&today), 5, 1).naive_local();
+
+        let schedule = nhlapi::schedule::get_range(team.id, &today, &season_end)?;
+
+        let gen = MarkdownGenerator::new(&api, &an, &schedule);
         let doc = gen.markdown();
 
         if config.test {
@@ -70,4 +84,16 @@ fn main() -> Result<(), Error> {
     }
 
     Ok(())
+}
+
+#[test]
+fn test_get_season_year() {
+    assert_eq!(
+        get_season_year(&Local.ymd(2019, 03, 15).naive_local()),
+        2019
+    );
+    assert_eq!(
+        get_season_year(&Local.ymd(2018, 11, 15).naive_local()),
+        2019
+    );
 }

@@ -115,6 +115,13 @@ pub mod schedule {
             }
         }
 
+        pub fn local_date(&self) -> String {
+            self.game_date
+                .with_timezone(&Local)
+                .format("%A, %B %d")
+                .to_string()
+        }
+
         pub fn local_time(&self) -> String {
             self.game_date
                 .with_timezone(&Local)
@@ -164,14 +171,22 @@ pub mod schedule {
         Ok(root.dates.remove(0))
     }
 
-    pub fn get_range(begin: &NaiveDate, end: &NaiveDate) -> reqwest::Result<Vec<Date>> {
+    pub fn get_range(
+        team_id: u32,
+        begin: &NaiveDate,
+        end: &NaiveDate,
+    ) -> reqwest::Result<Vec<Date>> {
         let begin = format!("{}", begin.format("%Y-%m-%d"));
         let end = format!("{}", end.format("%Y-%m-%d"));
 
         let client = reqwest::Client::new();
         let root: Root = client
             .get("https://statsapi.web.nhl.com/api/v1/schedule?expand=schedule.linescore")
-            .query(&[("startDate", begin), ("endDate", end)])
+            .query(&[
+                ("teamId", format!("{}", team_id)),
+                ("startDate", begin),
+                ("endDate", end),
+            ])
             .send()?
             .json()?;
         Ok(root.dates)
