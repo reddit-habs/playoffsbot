@@ -43,14 +43,6 @@ fn main() -> Result<(), Error> {
     let config_file = File::open("config.json")?;
     let config: Config = serde_json::from_reader(config_file)?;
 
-    let mut reddit = orca::App::new("tankbot", "1.0", "sbstp")?;
-    reddit.authorize_script(
-        &config.client_id,
-        &config.client_secret,
-        &config.username,
-        &config.password,
-    )?;
-
     for abbrev in config.playoffs {
         let team = api.get_team_by_abbrev(&abbrev);
         let analyzer = Analyzer::new(&api, team);
@@ -68,6 +60,14 @@ fn main() -> Result<(), Error> {
             let mut file = File::create(&format!("{}.md", team.abbrev))?;
             write!(file, "{}", doc.as_str())?;
         } else {
+            let mut reddit = orca::App::new("tankbot", "1.0", "sbstp")?;
+            reddit.authorize_script(
+                &config.client_id,
+                &config.client_secret,
+                &config.username,
+                &config.password,
+            )?;
+
             let today = Local::today();
             reddit.submit_self(
                 &team.subreddit,

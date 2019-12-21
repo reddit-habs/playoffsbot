@@ -183,6 +183,20 @@ impl MarkdownGenerator<'_> {
         doc.add(H2::new("Upcoming schedule"));
         doc.add(self.make_schedule_table());
 
+        //
+        // Disclaimer
+        //
+        doc.add(HR);
+        doc.add(H3::new("Disclaimer"));
+        doc.add(Paragraph::new(DISCLAIMER));
+
         doc
     }
 }
+
+const DISCLAIMER: &str = "This thread is created by a program which simulates
+the remainder of the season based on the current record of each team in the
+league, and counts how many times the favourite team makes it into the playoffs.
+The results may not always be accurate in cases where the outcome of a game does
+not significantly affect the playoffs odds of the favourite team. You can view
+the source code of this program [here](https://github.com/reddit-habs/playoffsbot).";

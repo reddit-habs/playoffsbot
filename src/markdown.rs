@@ -294,6 +294,16 @@ impl Display for Code {
 
 impl Element for Code {}
 
+pub struct HR;
+
+impl Display for HR {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        writeln!(f, "---")
+    }
+}
+
+impl Element for HR {}
+
 #[test]
 fn test_h1() {
     let mut doc = Document::new();
