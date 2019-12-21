@@ -53,7 +53,7 @@ impl MarkdownGenerator<'_> {
     }
 
     fn make_result_table<'a>(&self, matchups: impl Iterator<Item = &'a Matchup<'a>>) -> Table {
-        let mut table = Table::new(&["Game", "Score", "Overtime"]);
+        let mut table = Table::new(&["Game", "Score", "Outcome"]);
         for m in matchups {
             let (winner_score, loser_score) = if m.game.teams.home.score > m.game.teams.away.score {
                 (m.game.teams.home.score, m.game.teams.away.score)
