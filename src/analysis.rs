@@ -212,6 +212,7 @@ pub struct Matchup<'a> {
     pub is_result: bool,
     pub is_my_team_involed: bool,
     pub ideal_loser: &'a nhlapi::Team,
+    pub ideal_loser_in_conference: bool,
 }
 
 impl Matchup<'_> {
@@ -227,7 +228,7 @@ impl Matchup<'_> {
 
     pub fn get_mood(&self) -> &str {
         if self.game.loser().id == self.ideal_loser.id {
-            if self.game.overtime() {
+            if self.game.overtime() && self.ideal_loser_in_conference {
                 "Good"
             } else {
                 "Great"
@@ -296,6 +297,7 @@ impl<'m> MatchupPre<'m> {
             is_result: self.is_result,
             is_my_team_involed: self.is_my_team_involed,
             ideal_loser,
+            ideal_loser_in_conference: a.own_conference_team_ids.contains(&ideal_loser.id),
         }
     }
 }
