@@ -41,7 +41,7 @@ impl MarkdownGenerator<'_> {
         )
     }
 
-    fn fmt_ot(&self, game: &Game) -> String {
+    fn fmt_ot(&self, game: &Game) -> &str {
         if game.shootout() {
             "(SO)"
         } else if game.overtime() {
@@ -49,7 +49,6 @@ impl MarkdownGenerator<'_> {
         } else {
             ""
         }
-        .into()
     }
 
     fn make_result_table<'a>(&self, matchups: impl Iterator<Item = &'a Matchup<'a>>) -> Table {
