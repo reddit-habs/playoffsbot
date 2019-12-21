@@ -61,7 +61,7 @@ pub struct Team {
 }
 
 pub mod schedule {
-    use chrono::{DateTime, Local, NaiveDate, Utc};
+    use chrono::{DateTime, Local, NaiveDate, TimeZone, Utc};
     use serde::{Deserialize, Serialize};
 
     use super::{LeagueRecord, Season, Team};
@@ -115,18 +115,23 @@ pub mod schedule {
             }
         }
 
-        pub fn local_date(&self) -> String {
+        pub fn local_date<T>(&self, tz: &T) -> String
+        where
+            T: TimeZone,
+            <T as TimeZone>::Offset: std::fmt::Display,
+        {
             self.game_date
-                .with_timezone(&Local)
+                .with_timezone(tz)
                 .format("%A, %B %d")
                 .to_string()
         }
 
-        pub fn local_time(&self) -> String {
-            self.game_date
-                .with_timezone(&Local)
-                .format("%H:%M")
-                .to_string()
+        pub fn local_time<T>(&self, tz: &T) -> String
+        where
+            T: TimeZone,
+            <T as TimeZone>::Offset: std::fmt::Display,
+        {
+            self.game_date.with_timezone(tz).format("%H:%M").to_string()
         }
 
         pub fn overtime(&self) -> bool {
@@ -349,6 +354,8 @@ pub mod teams {
         caps
         winnipegjets";
 
+    use std::str::FromStr;
+
     use serde::{Deserialize, Serialize};
 
     #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -369,8 +376,19 @@ pub mod teams {
         pub location: String,
         pub division: Division,
         pub conference: Conference,
+        pub venue: Venue,
         #[serde(default)]
         pub subreddit: String,
+    }
+
+    impl Team {
+        pub fn timezone(&self) -> chrono_tz::Tz {
+            chrono_tz::Tz::from_str(&self.venue.timezone.id).expect("Unknown timezone")
+        }
+
+        pub fn timezone_code(&self) -> &str {
+            &self.venue.timezone.code
+        }
     }
 
     #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -383,6 +401,23 @@ pub mod teams {
     pub struct Conference {
         pub id: u32,
         pub name: String,
+    }
+
+    #[derive(Debug, Clone, Deserialize, Serialize)]
+    pub struct Venue {
+        pub id: Option<u32>,
+        pub name: String,
+        pub city: String,
+        #[serde(rename = "timeZone")]
+        pub timezone: TimeZone,
+    }
+
+    #[derive(Debug, Clone, Deserialize, Serialize)]
+    pub struct TimeZone {
+        pub id: String,
+        pub offset: i32,
+        #[serde(rename = "tz")]
+        pub code: String,
     }
 
     pub fn get() -> reqwest::Result<Vec<Team>> {

@@ -2,13 +2,14 @@ use std::iter;
 
 use crate::analysis::{Analysis, Api, Matchup, PlayoffMatchup, Seed};
 use crate::markdown::*;
-use crate::nhlapi::{self, schedule::Date, schedule::Game, standings::TeamRecord};
+use crate::nhlapi::{self, schedule::Date, schedule::Game, standings::TeamRecord, teams::Team};
 use crate::simulation;
 
 pub struct MarkdownGenerator<'a> {
     api: &'a Api,
     an: &'a Analysis<'a>,
     schedule: &'a [Date],
+    team: &'a Team,
 }
 
 impl MarkdownGenerator<'_> {
@@ -16,8 +17,14 @@ impl MarkdownGenerator<'_> {
         api: &'a Api,
         an: &'a Analysis<'a>,
         schedule: &'a [Date],
+        team: &'a Team,
     ) -> MarkdownGenerator<'a> {
-        MarkdownGenerator { api, an, schedule }
+        MarkdownGenerator {
+            api,
+            an,
+            schedule,
+            team,
+        }
     }
 
     fn fmt_team(&self, team: &nhlapi::Team) -> String {
@@ -76,12 +83,18 @@ impl MarkdownGenerator<'_> {
     }
 
     fn make_game_table<'a>(&self, games: impl Iterator<Item = &'a Matchup<'a>>) -> Table {
-        let mut table = Table::new(&["Game", "Cheer for", "Time"]);
+        let mut table = Table::new(&[
+            "Game",
+            "Cheer for",
+            &format!("Time ({})", self.team.timezone_code()),
+        ]);
+        let tz = self.team.timezone();
+
         for m in games {
             table.add(&[
                 self.fmt_vs(m.game.home_team(), m.game.away_team()),
                 self.fmt_team(m.cheer_for()),
-                m.game.local_time(),
+                m.game.local_time(&tz),
             ]);
         }
         table
@@ -126,14 +139,22 @@ impl MarkdownGenerator<'_> {
     }
 
     fn make_schedule_table(&self) -> Table {
-        let mut table = Table::new(&["Away", "", "Home", "Date", "Time"]);
+        let mut table = Table::new(&[
+            "Away",
+            "",
+            "Home",
+            "Date",
+            &format!("Time ({})", self.team.timezone_code()),
+        ]);
+        let tz = self.team.timezone();
+
         for game in self.schedule.iter().map(|x| &x.games).flatten().take(10) {
             table.add(&[
                 self.fmt_team(game.away_team()),
                 format!("at"),
                 self.fmt_team(game.home_team()),
-                game.local_date(),
-                game.local_time(),
+                game.local_date(&tz),
+                game.local_time(&tz),
             ]);
         }
         table

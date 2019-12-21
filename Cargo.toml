@@ -6,6 +6,7 @@ edition = "2018"
 
 [dependencies]
 chrono = { version = "0.4", features = ["serde"] }
+chrono-tz = "0.5"
 failure = "0.1"
 ordinal = "0.2"
 orca = "0.7"

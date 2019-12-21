@@ -53,7 +53,7 @@ fn main() -> Result<(), Error> {
 
         let schedule = nhlapi::schedule::get_range(team.id, &today, &season_end)?;
 
-        let gen = MarkdownGenerator::new(&api, &an, &schedule);
+        let gen = MarkdownGenerator::new(&api, &an, &schedule, &team);
         let doc = gen.markdown();
 
         if config.test {
