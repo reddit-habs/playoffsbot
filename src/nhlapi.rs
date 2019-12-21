@@ -130,7 +130,11 @@ pub mod schedule {
         }
 
         pub fn overtime(&self) -> bool {
-            self.linescore.periods.len() > 3
+            self.linescore.current_period > 3
+        }
+
+        pub fn shootout(&self) -> bool {
+            self.linescore.current_period > 4
         }
     }
 
@@ -150,6 +154,8 @@ pub mod schedule {
 
     #[derive(Debug, Clone, Deserialize, Serialize)]
     pub struct LineScore {
+        #[serde(rename = "currentPeriod")]
+        pub current_period: u32,
         pub periods: Vec<Period>,
     }
 

@@ -2,7 +2,7 @@ use std::iter;
 
 use crate::analysis::{Analysis, Api, Matchup, PlayoffMatchup, Seed};
 use crate::markdown::*;
-use crate::nhlapi::{self, schedule::Date, standings::TeamRecord};
+use crate::nhlapi::{self, schedule::Date, schedule::Game, standings::TeamRecord};
 use crate::simulation;
 
 pub struct MarkdownGenerator<'a> {
@@ -41,6 +41,17 @@ impl MarkdownGenerator<'_> {
         )
     }
 
+    fn fmt_ot(&self, game: &Game) -> String {
+        if game.shootout() {
+            "(SO)"
+        } else if game.overtime() {
+            "(OT)"
+        } else {
+            ""
+        }
+        .into()
+    }
+
     fn make_result_table<'a>(&self, matchups: impl Iterator<Item = &'a Matchup<'a>>) -> Table {
         let mut table = Table::new(&["Game", "Score", "Overtime"]);
         for m in matchups {
@@ -53,10 +64,11 @@ impl MarkdownGenerator<'_> {
             table.add(&[
                 self.fmt_vs(m.game.home_team(), m.game.away_team()),
                 format!(
-                    "{}-{} {}",
+                    "{}-{} {} {}",
                     loser_score,
                     winner_score,
-                    self.fmt_team(m.game.winner())
+                    self.fmt_team(m.game.winner()),
+                    self.fmt_ot(&m.game),
                 ),
                 m.get_mood().to_string(),
             ]);
