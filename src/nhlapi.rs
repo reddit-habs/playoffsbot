@@ -171,15 +171,22 @@ pub mod schedule {
     }
 
     pub fn get(date: &NaiveDate) -> reqwest::Result<Date> {
-        let date = format!("{}", date.format("%Y-%m-%d"));
+        let sdate = format!("{}", date.format("%Y-%m-%d"));
 
         let client = reqwest::Client::new();
-        let mut root: Root = client
+        let root: Root = client
             .get("https://statsapi.web.nhl.com/api/v1/schedule?expand=schedule.linescore")
-            .query(&[("date", date)])
+            .query(&[("date", sdate)])
             .send()?
             .json()?;
-        Ok(root.dates.remove(0))
+
+        // We there are no games scheduled for a day, for instance around Christmas,
+        // there is no dates returned. To make this problem transparent we return
+        // a mock date with no games.
+        Ok(root.dates.into_iter().next().unwrap_or_else(|| Date {
+            date: date.clone(),
+            games: vec![],
+        }))
     }
 
     pub fn get_range(

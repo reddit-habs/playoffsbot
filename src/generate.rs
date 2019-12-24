@@ -184,7 +184,11 @@ impl MarkdownGenerator<'_> {
         }
 
         doc.add(List::from(&["Outside of town"]));
-        doc.add(self.make_result_table(self.an.results.iter()));
+        if self.an.results.is_empty() {
+            doc.add(Paragraph::new("Nothing"));
+        } else {
+            doc.add(self.make_result_table(self.an.results.iter()));
+        }
 
         //
         // Standings
@@ -213,7 +217,11 @@ impl MarkdownGenerator<'_> {
         }
 
         doc.add(List::from(&["Outside of town"]));
-        doc.add(self.make_game_table(self.an.games.iter()));
+        if self.an.games.is_empty() {
+            doc.add(Paragraph::new("Nothing"));
+        } else {
+            doc.add(self.make_game_table(self.an.games.iter()));
+        }
 
         //
         // Schedule
