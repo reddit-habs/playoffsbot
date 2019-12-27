@@ -88,12 +88,6 @@ fn main() -> Result<(), Error> {
 
 #[test]
 fn test_get_season_year() {
-    assert_eq!(
-        get_season_year(&Local.ymd(2019, 03, 15).naive_local()),
-        2019
-    );
-    assert_eq!(
-        get_season_year(&Local.ymd(2018, 11, 15).naive_local()),
-        2019
-    );
+    assert_eq!(get_season_year(&Local.ymd(2019, 03, 15).naive_local()), 2019);
+    assert_eq!(get_season_year(&Local.ymd(2018, 11, 15).naive_local()), 2019);
 }

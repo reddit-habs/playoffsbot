@@ -38,10 +38,7 @@ impl Api {
     }
 
     pub fn get_team_by_id(&self, team_id: u32) -> &Team {
-        self.teams
-            .iter()
-            .find(|t| t.id == team_id)
-            .expect("team id not found")
+        self.teams.iter().find(|t| t.id == team_id).expect("team id not found")
     }
 
     pub fn get_points(&self, team_id: u32, past: bool) -> u32 {
@@ -152,10 +149,7 @@ impl Analyzer<'_> {
             PlayoffMatchup::new(&tops[0].record, &wildcard_seed[1].record),
             PlayoffMatchup::new(&tops[1].record, &wildcard_seed[0].record),
             PlayoffMatchup::new(&own_division_seed[1].record, &own_division_seed[2].record),
-            PlayoffMatchup::new(
-                &other_division_seed[1].record,
-                &other_division_seed[2].record,
-            ),
+            PlayoffMatchup::new(&other_division_seed[1].record, &other_division_seed[2].record),
         ];
 
         Analysis {
@@ -186,10 +180,7 @@ pub struct PlayoffMatchup<'a> {
 
 impl PlayoffMatchup<'_> {
     fn new<'a>(high_team: &'a TeamRecord, low_team: &'a TeamRecord) -> PlayoffMatchup<'a> {
-        PlayoffMatchup {
-            high_team,
-            low_team,
-        }
+        PlayoffMatchup { high_team, low_team }
     }
 }
 
@@ -247,8 +238,7 @@ struct MatchupPre<'a> {
 
 impl<'m> MatchupPre<'m> {
     pub fn create<'a>(a: &'a Analyzer, game: &'a Game, is_result: bool) -> MatchupPre<'a> {
-        let is_my_team_involed =
-            game.teams.away.team.id == a.my_team.id || game.teams.home.team.id == a.my_team.id;
+        let is_my_team_involed = game.teams.away.team.id == a.my_team.id || game.teams.home.team.id == a.my_team.id;
         MatchupPre {
             game,
             is_result,
@@ -258,10 +248,8 @@ impl<'m> MatchupPre<'m> {
 
     pub fn is_relevant(&self, a: &Analyzer) -> bool {
         self.is_my_team_involed
-            || a.own_conference_team_ids
-                .contains(&self.game.home_team().id)
-            || a.own_conference_team_ids
-                .contains(&self.game.away_team().id)
+            || a.own_conference_team_ids.contains(&self.game.home_team().id)
+            || a.own_conference_team_ids.contains(&self.game.away_team().id)
     }
 
     pub fn pick_winner(self, a: &'m Analyzer) -> Matchup<'m> {

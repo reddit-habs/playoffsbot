@@ -5,12 +5,12 @@ authors = ["Simon Bernier St-Pierre <sbernierstpierre@gmail.com>"]
 edition = "2018"
 
 [dependencies]
+attohttpc = { version = "0.7", features = ["json"] }
 chrono = { version = "0.4", features = ["serde"] }
 chrono-tz = "0.5"
 failure = "0.1"
 ordinal = "0.2"
 orca = "0.7"
 rand = "0.6"
-reqwest = "0.9"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

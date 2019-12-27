@@ -13,12 +13,7 @@ pub struct MarkdownGenerator<'a> {
 }
 
 impl MarkdownGenerator<'_> {
-    pub fn new<'a>(
-        api: &'a Api,
-        an: &'a Analysis<'a>,
-        schedule: &'a [Date],
-        team: &'a Team,
-    ) -> MarkdownGenerator<'a> {
+    pub fn new<'a>(api: &'a Api, an: &'a Analysis<'a>, schedule: &'a [Date], team: &'a Team) -> MarkdownGenerator<'a> {
         MarkdownGenerator {
             api,
             an,
@@ -33,19 +28,11 @@ impl MarkdownGenerator<'_> {
     }
 
     fn fmt_vs(&self, home_team: &nhlapi::Team, away_team: &nhlapi::Team) -> String {
-        format!(
-            "{} at {}",
-            self.fmt_team(away_team),
-            self.fmt_team(home_team)
-        )
+        format!("{} at {}", self.fmt_team(away_team), self.fmt_team(home_team))
     }
 
     fn fmt_seed(&self, record: &TeamRecord) -> String {
-        format!(
-            "{} ({})",
-            self.fmt_team(&record.team),
-            record.conference_rank
-        )
+        format!("{} ({})", self.fmt_team(&record.team), record.conference_rank)
     }
 
     fn fmt_ot(&self, game: &Game) -> &str {
@@ -83,11 +70,7 @@ impl MarkdownGenerator<'_> {
     }
 
     fn make_game_table<'a>(&self, games: impl Iterator<Item = &'a Matchup<'a>>) -> Table {
-        let mut table = Table::new(&[
-            "Game",
-            "Cheer for",
-            &format!("Time ({})", self.team.timezone_code()),
-        ]);
+        let mut table = Table::new(&["Game", "Cheer for", &format!("Time ({})", self.team.timezone_code())]);
         let tz = self.team.timezone();
 
         for m in games {
@@ -101,9 +84,7 @@ impl MarkdownGenerator<'_> {
     }
 
     fn make_standings_table(&self, seeds: &[Seed], wildcard: bool) -> Table {
-        let mut table = Table::new(&[
-            "Place", "Team", "GP", "Record", "Points", "ROW", "L10", "P%", "P-82",
-        ]);
+        let mut table = Table::new(&["Place", "Team", "GP", "Record", "Points", "ROW", "L10", "P%", "P-82"]);
         for (index, seed) in seeds.iter().enumerate() {
             let record = &seed.record;
 

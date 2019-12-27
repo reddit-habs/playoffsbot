@@ -9,9 +9,7 @@ pub struct Document {
 
 impl Document {
     pub fn new() -> Document {
-        Document {
-            buff: String::new(),
-        }
+        Document { buff: String::new() }
     }
 
     pub fn add<E>(&mut self, elem: E)

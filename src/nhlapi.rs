@@ -120,10 +120,7 @@ pub mod schedule {
             T: TimeZone,
             <T as TimeZone>::Offset: std::fmt::Display,
         {
-            self.game_date
-                .with_timezone(tz)
-                .format("%A, %B %d")
-                .to_string()
+            self.game_date.with_timezone(tz).format("%A, %B %d").to_string()
         }
 
         pub fn local_time<T>(&self, tz: &T) -> String
@@ -170,13 +167,11 @@ pub mod schedule {
         pub period_type: String,
     }
 
-    pub fn get(date: &NaiveDate) -> reqwest::Result<Date> {
+    pub fn get(date: &NaiveDate) -> attohttpc::Result<Date> {
         let sdate = format!("{}", date.format("%Y-%m-%d"));
 
-        let client = reqwest::Client::new();
-        let root: Root = client
-            .get("https://statsapi.web.nhl.com/api/v1/schedule?expand=schedule.linescore")
-            .query(&[("date", sdate)])
+        let root: Root = attohttpc::get("https://statsapi.web.nhl.com/api/v1/schedule?expand=schedule.linescore")
+            .params(&[("date", sdate)])
             .send()?
             .json()?;
 
@@ -189,18 +184,12 @@ pub mod schedule {
         }))
     }
 
-    pub fn get_range(
-        team_id: u32,
-        begin: &NaiveDate,
-        end: &NaiveDate,
-    ) -> reqwest::Result<Vec<Date>> {
+    pub fn get_range(team_id: u32, begin: &NaiveDate, end: &NaiveDate) -> attohttpc::Result<Vec<Date>> {
         let begin = format!("{}", begin.format("%Y-%m-%d"));
         let end = format!("{}", end.format("%Y-%m-%d"));
 
-        let client = reqwest::Client::new();
-        let root: Root = client
-            .get("https://statsapi.web.nhl.com/api/v1/schedule?expand=schedule.linescore")
-            .query(&[
+        let root: Root = attohttpc::get("https://statsapi.web.nhl.com/api/v1/schedule?expand=schedule.linescore")
+            .params(&[
                 ("teamId", format!("{}", team_id)),
                 ("startDate", begin),
                 ("endDate", end),
@@ -210,11 +199,11 @@ pub mod schedule {
         Ok(root.dates)
     }
 
-    pub fn today() -> reqwest::Result<Date> {
+    pub fn today() -> attohttpc::Result<Date> {
         get(&Local::today().naive_local())
     }
 
-    pub fn yesterday() -> reqwest::Result<Date> {
+    pub fn yesterday() -> attohttpc::Result<Date> {
         get(&Local::today().naive_local().pred())
     }
 }
@@ -284,10 +273,7 @@ pub mod standings {
         }
 
         pub fn point_82(&self) -> String {
-            format!(
-                "{:.0}",
-                (self.points as f64 / self.games_played as f64) * 82.0
-            )
+            format!("{:.0}", (self.points as f64 / self.games_played as f64) * 82.0)
         }
     }
 
@@ -307,22 +293,21 @@ pub mod standings {
         kind: String,
     }
 
-    pub fn get(date: &NaiveDate) -> reqwest::Result<Vec<TeamRecord>> {
+    pub fn get(date: &NaiveDate) -> attohttpc::Result<Vec<TeamRecord>> {
         let date = format!("{}", date.format("%Y-%m-%d"));
-        let client = reqwest::Client::new();
-        let mut root: Root = client
-            .get("https://statsapi.web.nhl.com/api/v1/standings/byLeague?expand=standings.record")
-            .query(&[("date", date)])
-            .send()?
-            .json()?;
+        let mut root: Root =
+            attohttpc::get("https://statsapi.web.nhl.com/api/v1/standings/byLeague?expand=standings.record")
+                .params(&[("date", date)])
+                .send()?
+                .json()?;
         Ok(root.records.remove(0).team_records)
     }
 
-    pub fn today() -> reqwest::Result<Vec<TeamRecord>> {
+    pub fn today() -> attohttpc::Result<Vec<TeamRecord>> {
         get(&Local::today().naive_local())
     }
 
-    pub fn yesterday() -> reqwest::Result<Vec<TeamRecord>> {
+    pub fn yesterday() -> attohttpc::Result<Vec<TeamRecord>> {
         get(&Local::today().naive_local().pred())
     }
 }
@@ -427,10 +412,8 @@ pub mod teams {
         pub code: String,
     }
 
-    pub fn get() -> reqwest::Result<Vec<Team>> {
-        let client = reqwest::Client::new();
-        let mut root: Root = client
-            .get("https://statsapi.web.nhl.com/api/v1/teams")
+    pub fn get() -> attohttpc::Result<Vec<Team>> {
+        let mut root: Root = attohttpc::get("https://statsapi.web.nhl.com/api/v1/teams")
             .send()?
             .json()?;
 
